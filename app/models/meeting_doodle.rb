@@ -2,8 +2,8 @@ class MeetingDoodle < ActiveRecord::Base
 
   belongs_to :project
   belongs_to :author, :class_name => 'User', :foreign_key => 'author_id'
-  has_many :comments, :as => :commented, :dependent => :delete_all, :order => "#{Comment.table_name}.created_on ASC"
-  has_many :responses, :class_name => 'MeetingDoodleAnswer', :dependent => :destroy, :order => "#{MeetingDoodleAnswer.table_name}.updated_on ASC", :include => [:author]
+  has_many :comments, lambda { order("#{Comment.table_name}.created_on ASC") }, :as => :commented, :dependent => :delete_all
+  has_many :responses, lambda { includes(:author).order("#{MeetingDoodleAnswer.table_name}.updated_on ASC") }, :class_name => 'MeetingDoodleAnswer', :dependent => :destroy
   acts_as_watchable
 
   validates_presence_of :title, :options
@@ -19,30 +19,30 @@ class MeetingDoodle < ActiveRecord::Base
 
   def tab_emails
     ret = []
-    ret = ret + emails.gsub(/\n/,',').split(/,/,-1) unless emails.nil?
+    ret = ret + emails.gsub(/\n/, ',').split(/,/, -1) unless emails.nil?
     ret
   end
 
   def deliver(to_all)
-    recipients = { author.language => [ author.mail ] }
+    recipients = { author.language => [author.mail] }
     if to_all
       watcher_users.each do |w|
         recipients[w.language] = update_recipients(recipients, w.language, w.mail)
       end
-    if !tab_emails.nil? && !tab_emails.empty?
+      if !tab_emails.nil? && !tab_emails.empty?
         tab_emails.each do |e|
           recipients[author.language] = update_recipients(recipients, author.language, e)
         end
       end
     end
-    recipients.each do |language,rec|
+    recipients.each do |language, rec|
       MeetingMailer.send_doodle(self, rec, language).deliver
     end
     return true
   end
 
   def deliver_update(to_all)
-    recipients = { author.language => [ author.mail ] }
+    recipients = { author.language => [author.mail] }
     if to_all
       watcher_users.each do |w|
         if !responses.find_by_author_id(w.id)
@@ -57,16 +57,16 @@ class MeetingDoodle < ActiveRecord::Base
         end
       end
     end
-    recipients.each do |language,rec|
+    recipients.each do |language, rec|
       MeetingMailer.send_doodle(self, rec, language).deliver
     end
     return true
   end
-  
+
   def deliver_invalid_answer(sender_email, user_from)
     MeetingMailer.send_invalid_answer(self, sender_email, user_from.language).deliver
   end
-  
+
 
   private
 
