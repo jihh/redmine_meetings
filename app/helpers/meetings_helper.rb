@@ -4,40 +4,40 @@ module MeetingsHelper
     target_day = 0
     target_week = 0
     case period
-    when :month
-      dt = Date.civil(year, month, 1) << 1
-      target_year = dt.year
-      target_month = dt.month
+      when :month
+        dt = Date.civil(year, month, 1) << 1
+        target_year = dt.year
+        target_month = dt.month
 
-      name = if target_year != year
-        "#{month_name(target_month)} #{target_year}"
-      else
-        "#{month_name(target_month)}"
-      end
+        name = if target_year != year
+                 "#{month_name(target_month)} #{target_year}"
+               else
+                 "#{month_name(target_month)}"
+               end
 
-    when :week
-      dt = Date.commercial(year, week, 1) - 7
-      target_year = dt.year
-      target_month = dt.month
-      target_week = dt.cweek
+      when :week
+        dt = Date.commercial(year, week, 1) - 7
+        target_year = dt.year
+        target_month = dt.month
+        target_week = dt.cweek
 
-      name = if target_year != year
-        "#{target_week}/#{target_year}"
-      else
-        "#{target_week}"
-      end
+        name = if target_year != year
+                 "#{target_week}/#{target_year}"
+               else
+                 "#{target_week}"
+               end
 
-    when :day
-      dt = Date.civil(year, month, day) - 1
-      target_year = dt.year
-      target_month = dt.month
-      target_day = dt.day
+      when :day
+        dt = Date.civil(year, month, day) - 1
+        target_year = dt.year
+        target_month = dt.month
+        target_day = dt.day
 
-      name = if target_month != month
-        "#{target_day}/#{target_month}"
-      else
-        "#{target_day}"
-      end
+        name = if target_month != month
+                 "#{target_day}/#{target_month}"
+               else
+                 "#{target_day}"
+               end
     end
 
     link_to_period(('&#171; ' + name), target_year, target_month, target_week, target_day)
@@ -47,40 +47,40 @@ module MeetingsHelper
     target_day = 0
     target_week = 0
     case period
-    when :month
-      dt = Date.civil(year, month, 1) >> 1
-      target_year = dt.year
-      target_month = dt.month
+      when :month
+        dt = Date.civil(year, month, 1) >> 1
+        target_year = dt.year
+        target_month = dt.month
 
-      name = if target_year != year
-        "#{month_name(target_month)} #{target_year}"
-      else
-        "#{month_name(target_month)}"
-      end
+        name = if target_year != year
+                 "#{month_name(target_month)} #{target_year}"
+               else
+                 "#{month_name(target_month)}"
+               end
 
-    when :week
-      dt = Date.commercial(year, week, 1) + 7
-      target_year = dt.year
-      target_month = dt.month
-      target_week = dt.cweek
+      when :week
+        dt = Date.commercial(year, week, 1) + 7
+        target_year = dt.year
+        target_month = dt.month
+        target_week = dt.cweek
 
-      name = if target_year != year
-        "#{target_week}/#{target_year}"
-      else
-        "#{target_week}"
-      end
+        name = if target_year != year
+                 "#{target_week}/#{target_year}"
+               else
+                 "#{target_week}"
+               end
 
-    when :day
-      dt = Date.civil(year, month, day) + 1
-      target_year = dt.year
-      target_month = dt.month
-      target_day = dt.day
+      when :day
+        dt = Date.civil(year, month, day) + 1
+        target_year = dt.year
+        target_month = dt.month
+        target_day = dt.day
 
-      name = if target_month != month
-        "#{target_day}/#{target_month}"
-      else
-        "#{target_day}"
-      end
+        name = if target_month != month
+                 "#{target_day}/#{target_month}"
+               else
+                 "#{target_day}"
+               end
     end
 
     link_to_period((name + ' &#187;'), target_year, target_month, target_week, target_day)
@@ -103,7 +103,7 @@ module MeetingsHelper
         meeting_started=false
         #First, test if meeting room already exists
         moderatorPW=Digest::SHA1.hexdigest("root"+@project.identifier)
-        data = callApi(server, "getMeetingInfo","meetingID=" + @project.identifier + "&password=" + moderatorPW, true)
+        data = callApi(server, "getMeetingInfo", "meetingID=" + @project.identifier + "&password=" + moderatorPW, true)
         return "" if data.nil?
         doc = REXML::Document.new(data)
         if doc.root.elements['returncode'].text == "FAILED" || doc.root.elements['attendees'].nil? || doc.root.elements['attendees'].size == 0
@@ -115,7 +115,7 @@ module MeetingsHelper
             recording_status = image_tag("recorder.png", :plugin => "redmine_meetings", :alt => l(:label_recording_meeting), :title => l(:label_recording_meeting))
           end
           if Setting.plugin_redmine_meetings['bbb_popup'] != '1'
-            output << link_to(l(:label_join_conference), {:controller => 'meetings', :action => 'join_conference', :project_id => @project, :only_path => true})
+            output << link_to(l(:label_join_conference), { :controller => 'meetings', :action => 'join_conference', :project_id => @project, :only_path => true })
           else
             output << ("<a href='' onclick='return start_meeting(\"" + url_for(:controller => 'meetings', :action => 'join_conference', :project_id => @project, :only_path => true) + "\");'>#{l(:label_join_conference)}</a>").html_safe
           end
@@ -134,10 +134,10 @@ module MeetingsHelper
         if !meeting_started
           if User.current.allowed_to?(:start_conference, @project)
             if Setting.plugin_redmine_meetings['bbb_popup'] != '1'
-              output << link_to(l(:label_conference_start), {:controller => 'meetings', :action => 'start_conference', :project_id => @project, :only_path => true})
+              output << link_to(l(:label_conference_start), { :controller => 'meetings', :action => 'start_conference', :project_id => @project, :only_path => true })
               if Setting.plugin_redmine_meetings['bbb_recording'] == '1'
                 output << "<br><br>".html_safe
-                output << link_to(l(:label_conference_start_with_record), {:controller => 'meetings', :action => 'start_conference', :project_id => @project, :only_path => true, :record => true})
+                output << link_to(l(:label_conference_start_with_record), { :controller => 'meetings', :action => 'start_conference', :project_id => @project, :only_path => true, :record => true })
               end
             else
               output << ("<a href='' onclick='return start_meeting(\"" + url_for(:controller => 'meetings', :action => 'start_conference', :project_id => @project, :only_path => true) + "\");'>#{l(:label_conference_start)}</a>").html_safe
@@ -149,11 +149,11 @@ module MeetingsHelper
             output << "<br><br>".html_safe
           end
         end
-        
+
         #Records
         if Setting.plugin_redmine_meetings['bbb_recording'] == '1' && User.current.allowed_to?(:view_recorded_conference, @project)
           output << "<br/><br/><h3>#{l(:label_conference_records)}</h3>".html_safe
-          dataRecord = callApi(server, "getRecordings","meetingID=" + @project.identifier, true)
+          dataRecord = callApi(server, "getRecordings", "meetingID=" + @project.identifier, true)
           return "" if dataRecord.nil?
           docRecord = REXML::Document.new(dataRecord)
           if docRecord.root.elements['returncode'].text == "FAILED" || docRecord.root.elements['recordings'].nil? || docRecord.root.elements['recordings'].size == 0
@@ -174,7 +174,7 @@ module MeetingsHelper
               output << ("&nbsp;&nbsp;- <a href='#{playback_url}' target='" + (Setting.plugin_redmine_meetings['bbb_popup'] != '1' ? '_self' : '_blank') + "'>"+ format_time(dataFormated) + "</a>").html_safe
               if User.current.allowed_to?(:start_conference, @project)
                 output << "&nbsp;&nbsp;".html_safe
-                output << link_to(image_tag("delete.png"), {:controller => 'meetings', :action => 'delete_conference', :project_id => @project, :record_id => recording.elements['recordID'].text, :only_path => true}, :data => { :confirm => l(:text_are_you_sure)}, :title => l(:label_delete_record))
+                output << link_to(image_tag("delete.png"), { :controller => 'meetings', :action => 'delete_conference', :project_id => @project, :record_id => recording.elements['recordID'].text, :only_path => true }, :data => { :confirm => l(:text_are_you_sure) }, :title => l(:label_delete_record))
               end
               output << ("<br>").html_safe
             end
@@ -191,10 +191,10 @@ module MeetingsHelper
   def render_sidebar_doodles
     output = "".html_safe
     if User.current.allowed_to?(:view_meeting_doodles, @project, :global => false)
-      doodles = MeetingDoodle.find(:all, :conditions => "project_id = #{@project.id}", :order => "created_on DESC")
+      doodles = MeetingDoodle.where(:project_id => @project.id).order("created_on DESC")
       doodles.each do |doodle|
         output << "<br/>".html_safe
-        output << link_to("-&nbsp;#{h(doodle.title)}".html_safe, {:controller => 'meetings', :action => 'show_doodle', :id => doodle.id, :project_id => @project, :only_path => true})
+        output << link_to("-&nbsp;#{h(doodle.title)}".html_safe, { :controller => 'meetings', :action => 'show_doodle', :id => doodle.id, :project_id => @project, :only_path => true })
       end
     end
     return output
@@ -205,8 +205,8 @@ module MeetingsHelper
     if options[:truncate]
       subject = truncate(meeting.subject, :length => options[:truncate])
     end
-    o = link_to "##{meeting.id}: ", {:controller => "meetings", :action => "show_meeting", :id => meeting},
-    :class => meeting.css_classe
+    o = link_to "##{meeting.id}: ", { :controller => "meetings", :action => "show_meeting", :id => meeting },
+                :class => meeting.css_classe
 
     if !options[:no_subject]
       o << h(subject)
@@ -223,13 +223,13 @@ module MeetingsHelper
     @cached_label_meeting_web ||= l(:field_meeting_web)
 
     loc = meeting.web ? l(:field_meeting_web) : h(meeting.location)
-    o = link_to "#{@cached_label_meeting} ##{meeting.id}: ", {:controller => "meetings", :action => "show_meeting", :id => meeting},
-    :class => meeting.css_classe
+    o = link_to "#{@cached_label_meeting} ##{meeting.id}: ", { :controller => "meetings", :action => "show_meeting", :id => meeting },
+                :class => meeting.css_classe
     o + "<br />".html_safe +
-    "<strong>#{@cached_label_subject}</strong>: #{h(meeting.subject)}<br />".html_safe +
-    "<strong>#{@cached_label_start_date}</strong>: #{format_time(meeting.start_date)}<br />".html_safe +
-    "<strong>#{@cached_label_end_date}</strong>: #{format_time(meeting.end_date)}<br />".html_safe +
-    "<strong>#{@cached_label_location}</strong>: #{loc}".html_safe
+        "<strong>#{@cached_label_subject}</strong>: #{h(meeting.subject)}<br />".html_safe +
+        "<strong>#{@cached_label_start_date}</strong>: #{format_time(meeting.start_date)}<br />".html_safe +
+        "<strong>#{@cached_label_end_date}</strong>: #{format_time(meeting.end_date)}<br />".html_safe +
+        "<strong>#{@cached_label_location}</strong>: #{loc}".html_safe
   end
 
   def meeting_style_time (meeting, day, min, max, ind)
@@ -237,34 +237,34 @@ module MeetingsHelper
     start_date = meeting_tz.utc_to_local(meeting.start_date.to_time)
     end_date = meeting_tz.utc_to_local(meeting.end_date.to_time)
     if start_date.day < day.day
-    top = 0
+      top = 0
     else
       h = start_date.hour
       if h < min
-      top = (h * 100 / min).to_i
+        top = (h * 100 / min).to_i
       elsif h > max
-      top = ((h - max) * 100 / (24 - max)).to_i
+        top = ((h - max) * 100 / (24 - max)).to_i
       else
-      t = 100
-      h = h - min
-      t = t + (h * 30) + (start_date.min / 2)
-      top = t.to_i
+        t = 100
+        h = h - min
+        t = t + (h * 30) + (start_date.min / 2)
+        top = t.to_i
       end
     end
 
     if end_date.day > day.day
-    height = ((max - min) * 30) + 195
+      height = ((max - min) * 30) + 195
     else
       h = end_date.hour
       if h < min
-      height = (h * 100 / min).to_i
+        height = (h * 100 / min).to_i
       elsif h > max
-      height = ((h - max) * 100 / (24 - max)).to_i
+        height = ((h - max) * 100 / (24 - max)).to_i
       else
-      t = 100
-      h = h - min
-      t = t + (h * 30) + (end_date.min / 2)
-      height = t.to_i
+        t = 100
+        h = h - min
+        t = t + (h * 30) + (end_date.min / 2)
+        height = t.to_i
       end
     end
     height = height - top
@@ -277,7 +277,7 @@ module MeetingsHelper
   def each_xml_element(node, name)
     if node && node[name]
       if node[name].is_a?(Hash)
-      yield node[name]
+        yield node[name]
       else
         node[name].each do |element|
           yield element

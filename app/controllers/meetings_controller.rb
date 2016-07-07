@@ -56,19 +56,19 @@ class MeetingsController < ApplicationController
     end
 
     case @period
-    when :month
-      @calendar = Meetings::Helpers::Calendar.new(DateTime.civil(@year, @month, 1), current_language, :month)
-      @calview = "meetings/month"
-    when :week
-      @calendar = Meetings::Helpers::Calendar.new(DateTime.commercial(@year, @week, 1), current_language, :week)
-      @calview = "meetings/week"
-    when :day
-      @calendar = Meetings::Helpers::Calendar.new(DateTime.civil(@year, @month, @day), current_language, :day)
-      @calview = "meetings/day"
+      when :month
+        @calendar = Meetings::Helpers::Calendar.new(DateTime.civil(@year, @month, 1), current_language, :month)
+        @calview = "meetings/month"
+      when :week
+        @calendar = Meetings::Helpers::Calendar.new(DateTime.commercial(@year, @week, 1), current_language, :week)
+        @calview = "meetings/week"
+      when :day
+        @calendar = Meetings::Helpers::Calendar.new(DateTime.civil(@year, @month, @day), current_language, :day)
+        @calview = "meetings/day"
     end
 
     meetings = []
-    meetings += Meeting.find(:all,:include => [ :author ], :conditions => ["(#{Meeting.table_name}.project_id = ?) AND ((start_date BETWEEN ? AND ?) OR (end_date BETWEEN ? AND ?))", @project.id, @calendar.startdt, @calendar.enddt, @calendar.startdt, @calendar.enddt])
+    meetings += Meeting.includes(:author).where("(#{Meeting.table_name}.project_id = ?) AND ((start_date BETWEEN ? AND ?) OR (end_date BETWEEN ? AND ?))", @project.id, @calendar.startdt, @calendar.enddt, @calendar.startdt, @calendar.enddt).all
     @calendar.meetings = meetings
 
     render :action => 'index', :layout => false if request.xhr?
@@ -149,13 +149,13 @@ class MeetingsController < ApplicationController
   end
 
   def export_meeting
-    meetings = [ @meeting ]
+    meetings = [@meeting]
     download_ics_for(meetings)
   end
 
   def export_meetings
     meetings = []
-    meetings += Meeting.find(:all,:include => [ :author ], :conditions => ["((start_date > ?) OR (end_date > ?))", DateTime.now, DateTime.now])
+    meetings += Meeting.includes(:author).where("((start_date > ?) OR (end_date > ?))", DateTime.now, DateTime.now).all
     download_ics_for(meetings)
   end
 
@@ -168,7 +168,7 @@ class MeetingsController < ApplicationController
       @response = @responses.find_by_author_id(User.current.id) unless !User.current.mail
       @response ||= MeetingDoodleAnswer.new :author => nil, :answers => Array.new(@doodle.tab_options.size, false)
       #@response.answers ||= Array.new(@doodle.tab_options.size, false)
-      @responses = @responses | [ @response ]
+      @responses = @responses | [@response]
     end
   end
 
@@ -177,7 +177,7 @@ class MeetingsController < ApplicationController
   end
 
   def preview_doodle
-    options = params[:meeting_doodle][:options].gsub(/\r/,'').split(/\n/)
+    options = params[:meeting_doodle][:options].gsub(/\r/, '').split(/\n/)
     tab = "\n\n"
     if !options.empty?
       tab << "||"
@@ -230,7 +230,7 @@ class MeetingsController < ApplicationController
                 r.answers << false
               end
             else
-              r.answers = r.answers[0,nl]
+              r.answers = r.answers[0, nl]
             end
             r.save
           end
@@ -287,7 +287,7 @@ class MeetingsController < ApplicationController
     moderatorPW=Digest::SHA1.hexdigest("root"+@project.identifier)
     attendeePW=Digest::SHA1.hexdigest("guest"+@project.identifier)
 
-    data = callApi(server, "getMeetingInfo","meetingID=" + @project.identifier + "&password=" + moderatorPW, true)
+    data = callApi(server, "getMeetingInfo", "meetingID=" + @project.identifier + "&password=" + moderatorPW, true)
     redirect_to back_url if data.nil?
     doc = REXML::Document.new(data)
     if doc.root.elements['returncode'].text != "FAILED"
@@ -313,14 +313,14 @@ class MeetingsController < ApplicationController
     moderatorPW=Digest::SHA1.hexdigest("root"+@project.identifier)
     attendeePW=Digest::SHA1.hexdigest("guest"+@project.identifier)
 
-    data = callApi(server, "getMeetingInfo","meetingID=" + @project.identifier + "&password=" + moderatorPW, true)
+    data = callApi(server, "getMeetingInfo", "meetingID=" + @project.identifier + "&password=" + moderatorPW, true)
     redirect_to back_url if data.nil?
     doc = REXML::Document.new(data)
     if doc.root.elements['returncode'].text == "FAILED"
       #If not, we created it...
       if @user.allowed_to?(:start_conference, @project)
         bridge = "77777" + @project.id.to_s
-        bridge = bridge[-5,5]
+        bridge = bridge[-5, 5]
         s = Setting.plugin_redmine_meetings['bbb_initpres']
         loadPres = ""
         if !s.nil? && !s.empty?
@@ -330,7 +330,7 @@ class MeetingsController < ApplicationController
         if params[:record]
           record = "true"
         end
-        data = callApi(server, "create","name=" + CGI.escape(@project.name) + "&meetingID=" + @project.identifier + "&attendeePW=" + attendeePW + "&moderatorPW=" + moderatorPW + "&logoutURL=" + back_url + "&voiceBridge=" + bridge + "&record=" + record, true, loadPres)
+        data = callApi(server, "create", "name=" + CGI.escape(@project.name) + "&meetingID=" + @project.identifier + "&attendeePW=" + attendeePW + "&moderatorPW=" + moderatorPW + "&logoutURL=" + back_url + "&voiceBridge=" + bridge + "&record=" + record, true, loadPres)
         ok_to_join = true
       end
     else
@@ -347,12 +347,12 @@ class MeetingsController < ApplicationController
   def delete_conference
     server = Setting.plugin_redmine_meetings['bbb_ip'].empty? ? Setting.plugin_redmine_meetings['bbb_server'] : Setting.plugin_redmine_meetings['bbb_ip']
     if params[:record_id]
-      data = callApi(server, "getRecordings","meetingID=" + @project.identifier, true)
+      data = callApi(server, "getRecordings", "meetingID=" + @project.identifier, true)
       if !data.nil?
         docRecord = REXML::Document.new(data)
         docRecord.root.elements['recordings'].each do |recording|
           if recording.elements['recordID'].text == params[:record_id]
-            data = callApi(server, "deleteRecordings","recordID=" + params[:record_id], true)
+            data = callApi(server, "deleteRecordings", "recordID=" + params[:record_id], true)
             break
           end
         end
@@ -365,8 +365,8 @@ class MeetingsController < ApplicationController
 
   def download_ics_for(meetings)
     cal = RiCal.Calendar do |cal|
-      cal.prodid           = "BIOPROJ"
-      cal.method_property  = ":REQUEST"
+      cal.prodid = "BIOPROJ"
+      cal.method_property = ":REQUEST"
       meetings.each do |meeting|
         desc = ''
         desc << meeting.description
@@ -376,21 +376,21 @@ class MeetingsController < ApplicationController
         end
         tzid = User.current.time_zone ? User.current.time_zone : ActiveSupport::TimeZone[Setting.plugin_redmine_meetings['meeting_timezone']]
         cal.event do |event|
-          event.dtstamp     = DateTime.now.utc
-          event.summary     = meeting.subject
+          event.dtstamp = DateTime.now.utc
+          event.summary = meeting.subject
           event.description = desc
-          event.dtstart     = meeting.start_date.utc
-          event.dtend       = meeting.end_date.utc
-          event.location    = meeting.web ? l(:field_meeting_web) : meeting.location
+          event.dtstart = meeting.start_date.utc
+          event.dtend = meeting.end_date.utc
+          event.location = meeting.web ? l(:field_meeting_web) : meeting.location
           meeting.watcher_users.collect.sort.each do |user|
-            event.add_attendee  user.mail
+            event.add_attendee user.mail
           end
-          event.organizer   = meeting.author.mail
-          event.uid         = "B10AA0B0-0000-0000-#{"%012d" % meeting.id}"
-          event.status      = "CONFIRMED"
+          event.organizer = meeting.author.mail
+          event.uid = "B10AA0B0-0000-0000-#{"%012d" % meeting.id}"
+          event.status = "CONFIRMED"
           event.class_property = ":PUBLIC"
-          event.priority    = 5
-          event.transp      = "OPAQUE"
+          event.priority = 5
+          event.transp = "OPAQUE"
           event.alarm do
             description "REMINDER"
             action "DISPLAY"
@@ -400,8 +400,8 @@ class MeetingsController < ApplicationController
       end
     end
     send_data cal.to_s, :filename => "export.ics",
-                                 :type => 'text/calendar',
-                                 :disposition => 'inline'
+              :type => 'text/calendar',
+              :disposition => 'inline'
   end
 
   def callApi (server, api, param, getcontent, data="")
@@ -418,8 +418,8 @@ class MeetingsController < ApplicationController
             connection.read
           else
             uri = URI.parse(url)
-            res = Net::HTTP.start(uri.host, uri.port) {|http|
-              response, body = http.post(uri.path+"?" + uri.query, data, {'Content-type'=>'text/xml; charset=utf-8'})
+            res = Net::HTTP.start(uri.host, uri.port) { |http|
+              response, body = http.post(uri.path+"?" + uri.query, data, { 'Content-type' => 'text/xml; charset=utf-8' })
               body
             }
           end
@@ -463,7 +463,7 @@ class MeetingsController < ApplicationController
 
   # Authorize the user for the requested action
   def authorize(ctrl = params[:controller], action = params[:action], global = false)
-    allowed = User.current.allowed_to?({:controller => ctrl, :action => action}, @project, :global => global)
+    allowed = User.current.allowed_to?({ :controller => ctrl, :action => action }, @project, :global => global)
     allowed ? true : deny_access
   end
 
