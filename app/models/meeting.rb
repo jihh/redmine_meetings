@@ -20,10 +20,9 @@ class Meeting < ActiveRecord::Base
                             :timestamp => "#{table_name}.updated_on",
                             :author_key => "#{table_name}.author_id",
                             :permission => :view_meetings,
-                            :scope => joins("LEFT JOIN #{Project.table_name} ON #{Project.table_name}.id = #{table_name}.project_id" )
+                            :scope => joins("LEFT JOIN #{Project.table_name} ON #{Project.table_name}.id = #{table_name}.project_id")
 
-  scope :visible, lambda { |*args| { :include => :project,
-                                     :conditions => Project.allowed_to_condition(args.shift || User.current, :view_meetings, *args) } }
+  scope :visible, lambda { |*args| includes(:project).where(Project.allowed_to_condition(args.shift || User.current, :view_meetings, *args)) }
 
   def visible?(user=User.current)
     !user.nil? && user.allowed_to?(:view_meetings, project)
